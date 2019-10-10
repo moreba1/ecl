@@ -490,7 +490,7 @@ void Ekf::controlOpticalFlowFusion()
 			&& !_control_status.flags.opt_flow // we are not yet using flow data
 			&& _control_status.flags.tilt_align // we know our tilt attitude
 			&& !_inhibit_flow_use
-			&& get_terrain_valid()) // we have a valid distance to ground estimate
+			&& isTerrainEstimateValid())
 		{
 			// If the heading is not aligned, reset the yaw and magnetic field states
 			if (!_control_status.flags.yaw_align) {
@@ -1012,7 +1012,7 @@ void Ekf::controlHeightFusion()
 			// we have just switched to using range finder, calculate height sensor offset such that current
 			// measurement matches our current height estimate
 			if (_control_status_prev.flags.rng_hgt != _control_status.flags.rng_hgt) {
-				if (get_terrain_valid()) {
+				if (isTerrainEstimateValid()) {
 					_hgt_sensor_offset = _terrain_vpos;
 
 				} else {
@@ -1059,7 +1059,7 @@ void Ekf::controlHeightFusion()
 		// measurement matches our current height estimate
 		if (_control_status_prev.flags.rng_hgt != _control_status.flags.rng_hgt) {
 			// use the parameter rng_gnd_clearance if on ground to avoid a noisy offset initialization (e.g. sonar)
-			if (_control_status.flags.in_air && get_terrain_valid()) {
+			if (_control_status.flags.in_air && isTerrainEstimateValid()) {
 
 				_hgt_sensor_offset = _terrain_vpos;
 
@@ -1094,7 +1094,7 @@ void Ekf::controlHeightFusion()
 			// we have just switched to using range finder, calculate height sensor offset such that current
 			// measurement matches our current height estimate
 			if (_control_status_prev.flags.rng_hgt != _control_status.flags.rng_hgt) {
-				if (get_terrain_valid()) {
+				if (isTerrainEstimateValid()) {
 					_hgt_sensor_offset = _terrain_vpos;
 
 				} else {
@@ -1179,12 +1179,12 @@ void Ekf::rangeAidConditionsMet()
 		// check if we can use range finder measurements to estimate height, use hysteresis to avoid rapid switching
 		bool can_use_range_finder;
 		if (_range_aid_mode_enabled) {
-			can_use_range_finder = (_terrain_vpos - _state.pos(2) < _params.max_hagl_for_range_aid) && get_terrain_valid();
+			can_use_range_finder = (_terrain_vpos - _state.pos(2) < _params.max_hagl_for_range_aid) && isTerrainEstimateValid();
 
 		} else {
 			// if we were not using range aid in the previous iteration then require the current height above terrain to be
 			// smaller than 70 % of the maximum allowed ground distance for range aid
-			can_use_range_finder = (_terrain_vpos - _state.pos(2) < 0.7f * _params.max_hagl_for_range_aid) && get_terrain_valid();
+			can_use_range_finder = (_terrain_vpos - _state.pos(2) < 0.7f * _params.max_hagl_for_range_aid) && isTerrainEstimateValid();
 		}
 
 		bool horz_vel_valid = (_control_status.flags.gps || _control_status.flags.ev_pos || _control_status.flags.ev_vel || _control_status.flags.opt_flow)
@@ -1430,7 +1430,7 @@ void Ekf::controlMagFusion()
 		if (!_control_status.flags.mag_align_complete && _control_status.flags.in_air) {
 			// Check if height has increased sufficiently to be away from ground magnetic anomalies
 			// and request a yaw reset if not already requested.
-			float terrain_vpos_estimate = get_terrain_valid() ? _terrain_vpos : _last_on_ground_posD;
+			float terrain_vpos_estimate = isTerrainEstimateValid() ? _terrain_vpos : _last_on_ground_posD;
 			_mag_yaw_reset_req |= (terrain_vpos_estimate - _state.pos(2)) > 1.5f;
 		}
 
